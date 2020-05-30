@@ -45,7 +45,7 @@ impl Card {
         loop {
             let temp = self.current_temperature();
 
-            // Keep the last 15 seconds of readings
+            // Keep the last <fan_wind_down> seconds of readings
             recent_temps.insert(0, temp);
             recent_temps.truncate(fan_wind_down);
 
@@ -54,7 +54,7 @@ impl Card {
 
             println!("card={:?} current={} window={} fanspeed={}", self.path, &temp, &max_recent_temp, &current_fan_speed);
 
-            // Change fan speed with 15 second wind-down delay
+            // Change fan speed with <fan_wind_down> seconds of wind-down delay
             match max_recent_temp {
                 0..=40 => self.set_fan_speed(self.min_fan_speed()),
                 41..=45 => self.set_fan_speed(self.max_fan_speed() / 5),
