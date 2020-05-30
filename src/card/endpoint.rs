@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -18,11 +19,17 @@ impl Endpoint {
         existence
     }
 
-    pub fn read(&self) {
+    pub fn read(&self) -> String {
+        let content = fs::read_to_string(&self.path)
+            .expect(&format!("Failed to read endpoint {:?}", self.path));
 
+        content.trim().to_string()
     }
 
-    pub fn write(&self, value: &str) {
+    pub fn write(&self, value: &str) -> std::io::Result<()> {
+        let result = fs::write(&self.path, value)
+            .expect(&format!("Failed to write to endpoint {:?}", self.path));
 
+        Ok(result)
     }
 }
