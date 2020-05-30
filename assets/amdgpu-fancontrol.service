@@ -1,0 +1,11 @@
+[Unit]
+Description=AMD GPU Fan Control
+After=graphical.target
+
+[Service]
+ExecStart=/usr/local/bin/amdgpu-fancontrol
+Type=exec
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

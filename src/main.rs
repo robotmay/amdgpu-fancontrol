@@ -46,7 +46,7 @@ fn main() {
     }
 
     for handle in threads {
-        handle.join();
+        handle.join().unwrap();
     }
 }
 
