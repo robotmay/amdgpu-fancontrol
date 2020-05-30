@@ -5,6 +5,7 @@ authors = ["Robert May <rob@afternoonrobot.co.uk>"]
 edition = "2018"
 license = "MIT"
 description = "An AMD GPU fan controller for Linux"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

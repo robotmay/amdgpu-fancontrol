@@ -50,8 +50,9 @@ impl Card {
             recent_temps.truncate(fan_wind_down);
 
             let max_recent_temp = recent_temps.iter().max().unwrap();
+            let current_fan_speed = self.get_fan_speed();
 
-            println!("card={:?} current={} window={}", self.path, &temp, &max_recent_temp);
+            println!("card={:?} current={} window={} fanspeed={}", self.path, &temp, &max_recent_temp, &current_fan_speed);
 
             // Change fan speed with 15 second wind-down delay
             match max_recent_temp {
@@ -105,6 +106,13 @@ impl Card {
 
     fn set_fan_speed(&self, speed: i32) {
         self.endpoint("pwm1").write(&speed.to_string()).unwrap()
+    }
+
+    fn get_fan_speed(&self) -> i32 {
+        self.endpoint("pwm1")
+            .read()
+            .parse()
+            .unwrap()
     }
 
     fn exists(&self) -> bool {
