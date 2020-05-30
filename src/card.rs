@@ -51,12 +51,7 @@ impl Card {
 
             let max_recent_temp = recent_temps.iter().max().unwrap();
 
-            // Blank the terminal
-            print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-            println!("Card: {:?}", self.path);
-            println!("Fan wind-down delay: {}s", fan_wind_down);
-            println!("Last temperature reading: {}", &temp);
-            println!("Highest recent temperature reading: {}", &max_recent_temp);
+            println!("card={:?} current={} window={}", self.path, &temp, &max_recent_temp);
 
             // Change fan speed with 15 second wind-down delay
             match max_recent_temp {
