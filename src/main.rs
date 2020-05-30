@@ -2,7 +2,7 @@ mod card;
 
 use std::io;
 use std::fs;
-use std::path::Path;
+use std::thread;
 
 use clap::Clap;
 use serde::Deserialize;
@@ -19,23 +19,34 @@ struct Opts {
 
 #[derive(Deserialize, Debug)]
 struct Config {
-    cards: Vec<String>
+    cards: Vec<String>,
+    fan_wind_down: usize
 }
 
 fn main() {
     let opts = Opts::parse();
     let config = load_config(&opts).unwrap();
-
-    println!("{}", opts.config);
-    println!("{:?}", config);
+    let mut threads = vec![];
 
     for card_name in config.cards {
         let path_str = format!("/sys/class/drm/{}", card_name);
 
         match Card::new(&path_str) {
-            Some(card) => card.control(),
+            Some(card) => {
+                let fan_wind_down = usize::clone(&config.fan_wind_down);
+
+                threads.push(
+                    thread::spawn(move || {
+                        card.control(fan_wind_down)
+                    })
+                )
+            },
             None => panic!("Couldn't find card {}", card_name),
         }
+    }
+
+    for handle in threads {
+        handle.join();
     }
 }
 

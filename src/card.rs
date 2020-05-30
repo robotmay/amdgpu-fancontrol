@@ -1,7 +1,5 @@
 mod endpoint;
 
-use std::fs;
-use std::io;
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -28,9 +26,6 @@ impl Card {
         let path = Path::new(path_string);
         let endpoint_path = path.join("device/hwmon/hwmon0");
 
-        println!("Path: {:?}", path);
-        println!("Endpoint path: {:?}", endpoint_path);
-
         let card = Card {
             path: path.to_path_buf(),
             endpoint_path: endpoint_path
@@ -43,26 +38,34 @@ impl Card {
         }
     }
 
-    pub fn control(&self) {
+    pub fn control(&self, fan_wind_down: usize) -> std::thread::JoinHandle<()> {
         self.assume_software_control();
         let mut recent_temps = vec![];
 
         loop {
             let temp = self.current_temperature();
 
+            // Keep the last 15 seconds of readings
             recent_temps.insert(0, temp);
-            recent_temps.truncate(15);
+            recent_temps.truncate(fan_wind_down);
 
             let max_recent_temp = recent_temps.iter().max().unwrap();
 
+            // Blank the terminal
             print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+            println!("Card: {:?}", self.path);
+            println!("Fan wind-down delay: {}s", fan_wind_down);
             println!("Last temperature reading: {}", &temp);
             println!("Highest recent temperature reading: {}", &max_recent_temp);
 
+            // Change fan speed with 15 second wind-down delay
             match max_recent_temp {
-                0..=45 => self.set_fan_speed(self.min_fan_speed()),
-                46..=55 => self.set_fan_speed(self.max_fan_speed() / 4),
-                56..=65 => self.set_fan_speed(self.max_fan_speed() / 2),
+                0..=40 => self.set_fan_speed(self.min_fan_speed()),
+                41..=45 => self.set_fan_speed(self.max_fan_speed() / 5),
+                46..=50 => self.set_fan_speed(self.max_fan_speed() / 4),
+                51..=60 => self.set_fan_speed(self.max_fan_speed() / 3),
+                61..=65 => self.set_fan_speed(self.max_fan_speed() / 2),
+                66..=70 => self.set_fan_speed((self.max_fan_speed() / 2) + (self.max_fan_speed() / 4)),
                 _ => self.set_fan_speed(self.max_fan_speed()),
             }
 
@@ -71,8 +74,6 @@ impl Card {
     }
 
     fn assume_software_control(&self) {
-        println!("Assuming software fan control for {:?}", self.path);
-
         match self.endpoint("pwm1_enable").write("1") {
             Ok(()) => println!("Assumed control"),
             Err(err) => panic!(err),
@@ -80,8 +81,6 @@ impl Card {
     }
 
     fn restore_hardware_control(&self) {
-        println!("Restoring hardware fan control for {:?}", self.path);
-
         match self.endpoint("pwm1_enable").write("2") {
             Ok(()) => println!("Restored control"),
             Err(err) => panic!(err),
@@ -110,14 +109,10 @@ impl Card {
     }
 
     fn set_fan_speed(&self, speed: i32) {
-        match self.endpoint("pwm1").write(&speed.to_string()) {
-            Ok(()) => println!("Fan speed set to {}", speed),
-            Err(err) => panic!(err)
-        }
+        self.endpoint("pwm1").write(&speed.to_string()).unwrap()
     }
 
     fn exists(&self) -> bool {
-        println!("Does {:?} exist?", self.path);
         self.path.is_dir()
     }
 
