@@ -1,5 +1,6 @@
 mod endpoint;
 
+use std::fs;
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -40,32 +41,36 @@ impl Card {
 
     pub fn control(&self, fan_wind_down: usize) -> std::thread::JoinHandle<()> {
         self.assume_software_control();
-        let mut recent_temps = vec![];
+        let mut recent_temps: Vec<i32> = vec![];
 
         loop {
-            let temp = self.current_temperature();
-
-            // Keep the last <fan_wind_down> seconds of readings
-            recent_temps.insert(0, temp);
-            recent_temps.truncate(fan_wind_down);
-
-            let max_recent_temp = recent_temps.iter().max().unwrap();
-            let current_fan_speed = self.get_fan_speed();
-
-            println!("card={:?} current={} window={} fanspeed={}", self.path, &temp, &max_recent_temp, &current_fan_speed);
-
-            // Change fan speed with <fan_wind_down> seconds of wind-down delay
-            match max_recent_temp {
-                0..=40 => self.set_fan_speed(self.min_fan_speed()),
-                41..=45 => self.set_fan_speed(self.max_fan_speed() / 5),
-                46..=50 => self.set_fan_speed(self.max_fan_speed() / 4),
-                51..=60 => self.set_fan_speed(self.max_fan_speed() / 3),
-                61..=65 => self.set_fan_speed(self.max_fan_speed() / 2),
-                66..=70 => self.set_fan_speed((self.max_fan_speed() / 2) + (self.max_fan_speed() / 4)),
-                _ => self.set_fan_speed(self.max_fan_speed()),
-            }
-
+            self.adjust_fan(&fan_wind_down, &mut recent_temps)
+                .expect("Failed to adjust the fan");
             thread::sleep(time::Duration::from_millis(1000));
+        }
+    }
+
+    pub fn adjust_fan(&self, fan_wind_down: &usize, recent_temps: &mut Vec<i32>) -> std::io::Result<()> {
+        let temp = self.current_temperature();
+
+        // Keep the last <fan_wind_down> seconds of readings
+        recent_temps.insert(0, temp);
+        recent_temps.truncate(*fan_wind_down);
+
+        let max_recent_temp = recent_temps.iter().max().unwrap();
+        let current_fan_speed = self.get_fan_speed();
+
+        println!("card={:?} current={} window={} fanspeed={}", self.path, &temp, &max_recent_temp, &current_fan_speed);
+
+        // Change fan speed with <fan_wind_down> seconds of wind-down delay
+        match max_recent_temp {
+            0..=40 => self.set_fan_speed(self.min_fan_speed()),
+            41..=45 => self.set_fan_speed(self.max_fan_speed() / 5),
+            46..=50 => self.set_fan_speed(self.max_fan_speed() / 4),
+            51..=60 => self.set_fan_speed(self.max_fan_speed() / 3),
+            61..=65 => self.set_fan_speed(self.max_fan_speed() / 2),
+            66..=70 => self.set_fan_speed((self.max_fan_speed() / 2) + (self.max_fan_speed() / 4)),
+            _ => self.set_fan_speed(self.max_fan_speed()),
         }
     }
 
@@ -104,8 +109,8 @@ impl Card {
             .unwrap()
     }
 
-    fn set_fan_speed(&self, speed: i32) {
-        self.endpoint("pwm1").write(&speed.to_string()).unwrap()
+    fn set_fan_speed(&self, speed: i32) -> std::io::Result<()> {
+        self.endpoint("pwm1").write(&speed.to_string())
     }
 
     fn get_fan_speed(&self) -> i32 {
@@ -134,5 +139,51 @@ impl Card {
 impl Drop for Card {
     fn drop(&mut self) {
         self.restore_hardware_control()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup() {
+        fs::write(Path::new("test/card0/device/hwmon/hwmon0/temp1_input"), "35000")
+            .expect("Couldn't write to temp1_input");
+
+        fs::write(Path::new("test/card0/device/hwmon/hwmon0/pwm1_min"), "0")
+            .expect("Couldn't write to pwm1_min");
+
+        fs::write(Path::new("test/card0/device/hwmon/hwmon0/pwm1_max"), "255")
+            .expect("Couldn't write to pwm1_max");
+
+        fs::write(Path::new("test/card0/device/hwmon/hwmon0/pwm1"), "30")
+            .expect("Couldn't write to pwm1");
+    }
+
+    #[test]
+    fn test_new() {
+        let card = Card::new("test/card0").unwrap();
+
+        assert_eq!(card.path, Path::new("test/card0"));
+        assert_eq!(card.endpoint_path, Path::new("test/card0/device/hwmon/hwmon0"));
+    }
+
+    #[test]
+    fn test_adjust_fan() {
+        setup();
+
+        let card = Card::new("test/card0").unwrap();
+        let fan_wind_down: usize = 30;
+        let mut recent_temps: Vec<i32> = vec![];
+
+        // Check temperature from setup
+        assert_eq!(fs::read_to_string("test/card0/device/hwmon/hwmon0/pwm1").unwrap(), "30");
+
+        // Run the fan adjustment based on the setup temperature
+        let adjust = card.adjust_fan(&fan_wind_down, &mut recent_temps).unwrap();
+        assert_eq!(adjust, ());
+
+        // Ensure the fan was correctly updated
+        assert_eq!(fs::read_to_string("test/card0/device/hwmon/hwmon0/pwm1").unwrap(), "0");
     }
 }

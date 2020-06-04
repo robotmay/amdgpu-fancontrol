@@ -56,3 +56,17 @@ fn load_config(opts: &Opts) -> io::Result<Config> {
 
     Ok(config)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_loading() {
+        let opts = Opts { config: "assets/config.toml".to_string() };
+        let config = load_config(&opts).unwrap();
+
+        assert_eq!(config.cards, ["card0"]);
+        assert_eq!(config.fan_wind_down, 30);
+    }
+}

@@ -1,5 +1,7 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::thread;
+use std::time;
 
 #[derive(Debug)]
 pub struct Endpoint {
@@ -15,7 +17,6 @@ impl Endpoint {
 
     pub fn exists(&self) -> bool {
         let existence: bool = self.path.is_file();
-        println!("{:?} exists? {}", self.path, existence);
         existence
     }
 
@@ -31,5 +32,38 @@ impl Endpoint {
             .expect(&format!("Failed to write to endpoint {:?}", self.path));
 
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        let path = Path::new("test/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
+        let endpoint = Endpoint::new(path.clone());
+
+        assert_eq!(endpoint.path, path);
+    }
+
+    #[test]
+    fn test_exists() {
+        let path = Path::new("test/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
+        let endpoint = Endpoint::new(path.clone());
+
+        assert_eq!(endpoint.exists(), true);
+    }
+
+    #[test]
+    fn test_read_write() {
+        let path = Path::new("test/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
+        let endpoint = Endpoint::new(path.clone());
+
+        // Might fail due to file write speeds, to be fixed
+        assert_eq!(endpoint.write("30").unwrap(), ());
+        assert_eq!(endpoint.read(), "30");
+        assert_eq!(endpoint.write("11").unwrap(), ());
+        assert_eq!(endpoint.read(), "11");
     }
 }
