@@ -16,14 +16,14 @@ Yes.
 
 ## Installation
 
-Until I sort out something better, under Ubuntu/Debian you will currently need a Rust setup, then clone the repo and run:
+To build and install this under Ubuntu/Debian, you will first need [Rust](https://www.rust-lang.org) installed, then run:
 
 ```
 cargo deb --install
 sudo systemctl enable amdgpu-fancontrol.service
 ```
 
-Configure your card if needed at: `/etc/amdgpu-fancontrol/config.toml`. You can find your cards (on Debian, at least), at: `/sys/class/drm/`.
+Configure your card if needed at: `/etc/amdgpu-fancontrol/config.toml`. You can find your cards (on Ubuntu/Debian, at least), at: `/sys/class/drm/`.
 In theory multiple cards are supported, but I don't own multiple cards, so _bon chance_.
 If you want to adjust the window used to decide whether the fan can adjust downwards, you can specify it in seconds. Default is `30`.
 
@@ -37,6 +37,29 @@ Start the service:
 ```
 sudo systemctl start amdgpu-fancontrol.service
 ```
+
+## Potential problems
+
+This works well on my machine, which is running a Sapphire RX 580 Nitro under Ubuntu 20.04, but I am not sure what issues could occur with different setups.
+If something weird happens and you want to quickly restore hardware fan control, first disable the service so it doesn't start on next boot:
+
+```
+sudo systemctl disable amdgpu-fancontrol.service
+```
+
+Then you can either stop the running service with:
+
+```
+sudo systemctl stop amdgpu-fancontrol.service
+```
+
+which _should_ restore hardware control (although it seems to result in the fans running higher by default), or alternatively you can manually restore it with:
+
+```
+sudo echo "2" > /sys/class/drm/card0/device/hwmon/hwmon0/pwm1_enable
+```
+
+Lastly, rebooting after disabling the service should restore everything to normal.
 
 ## Running the tests
 
