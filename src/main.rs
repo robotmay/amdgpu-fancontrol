@@ -2,6 +2,7 @@ mod card;
 
 use std::io;
 use std::fs;
+use std::path::Path;
 use std::thread;
 
 use clap::Clap;
@@ -20,7 +21,9 @@ struct Opts {
 #[derive(Deserialize, Debug)]
 struct Config {
     cards: Vec<String>,
-    fan_wind_down: usize
+    fan_wind_down: usize,
+    cards_path: String,
+    endpoint_path: String
 }
 
 fn main() {
@@ -29,9 +32,9 @@ fn main() {
     let mut threads = vec![];
 
     for card_name in config.cards {
-        let path_str = format!("/sys/class/drm/{}", card_name);
+        let path = Path::new(&config.cards_path).join(&card_name);
 
-        match Card::new(&path_str) {
+        match Card::new(&path, &config.endpoint_path) {
             Some(card) => {
                 let fan_wind_down = usize::clone(&config.fan_wind_down);
 
