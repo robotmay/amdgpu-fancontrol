@@ -37,3 +37,17 @@ Start the service:
 ```
 sudo systemctl start amdgpu-fancontrol.service
 ```
+
+## Running the tests
+
+Tests currently have to be run serially due to file modification gubbins, this can be done either by setting:
+
+```
+RUST_TEST_THREADS=1
+```
+
+in your environment, and running `cargo test`, or by running the tests with:
+
+```
+cargo test -- --test-threads=1
+```

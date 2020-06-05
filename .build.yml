@@ -3,6 +3,8 @@ packages:
   - rustup
 sources:
   - https://git.sr.ht/~robotmay/amdgpu-fancontrol
+environment:
+  RUST_TEST_THREADS: 1
 tasks:
   - setup: |
       rustup toolchain install nightly stable
