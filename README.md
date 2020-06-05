@@ -16,14 +16,20 @@ Yes.
 
 ## Installation
 
+### Ubuntu/Debian
 For Ubuntu/Debian you can download a .deb binary from [the releases page](https://git.sr.ht/~robotmay/amdgpu-fancontrol/refs). Then install it with:
 
 ```
-sudo dpkg -i amdgpu-fancontrol_0.1.1_amd64.deb
+sudo dpkg -i amdgpu-fancontrol_0.1.2_amd64.deb
 sudo systemctl enable amdgpu-fancontrol.service
 ```
 
 Now skip to the configuration section.
+
+## Pre-built binary
+
+On [each release](https://git.sr.ht/~robotmay/amdgpu-fancontrol/refs) there is also a pre-built binary attached, which can be used, in theory, on other
+distributions. You will need to add your own systemd service or equivalent, and point it to a valid config file.
 
 ## Building a .deb with Rust
 
@@ -43,7 +49,11 @@ If you want to adjust the window used to decide whether the fan can adjust downw
 ```toml
 cards = ["card0"]
 fan_wind_down = 30
+cards_path = "/sys/class/drm"
+endpoint_path = "device/hwmon/hwmon0"
 ```
+
+The two paths get joined together with the card names, for example: `/sys/class/drm/card0/device/hwmon/hwmon0`.
 
 Start the service:
 

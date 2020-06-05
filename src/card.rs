@@ -1,7 +1,7 @@
 mod endpoint;
 
 use std::option::Option;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::thread;
 use std::time;
 
@@ -22,13 +22,12 @@ pub struct Card {
 }
 
 impl Card {
-    pub fn new(path_string: &str) -> Option<Card> {
-        let path = Path::new(path_string);
-        let endpoint_path = path.join("device/hwmon/hwmon0");
+    pub fn new(path: &PathBuf, endpoint_path: &str) -> Option<Card> {
+        let full_endpoint_path = path.join(endpoint_path);
 
         let card = Card {
             path: path.to_path_buf(),
-            endpoint_path: endpoint_path
+            endpoint_path: full_endpoint_path
         };
 
         if card.exists() && card.verify() {
@@ -145,6 +144,7 @@ impl Drop for Card {
 mod tests {
     use super::*;
     use std::fs;
+    use std::path::Path;
 
     fn setup() {
         fs::write(Path::new("test/card0/device/hwmon/hwmon0/temp1_input"), "35000")
@@ -162,7 +162,8 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let card = Card::new("test/card0").unwrap();
+        let path = Path::new("test/card0").to_path_buf();
+        let card = Card::new(&path, "device/hwmon/hwmon0").unwrap();
 
         assert_eq!(card.path, Path::new("test/card0"));
         assert_eq!(card.endpoint_path, Path::new("test/card0/device/hwmon/hwmon0"));
@@ -172,7 +173,8 @@ mod tests {
     fn test_adjust_fan() {
         setup();
 
-        let card = Card::new("test/card0").unwrap();
+        let path = Path::new("test/card0").to_path_buf();
+        let card = Card::new(&path, "device/hwmon/hwmon0").unwrap();
         let fan_wind_down: usize = 30;
         let mut recent_temps: Vec<i32> = vec![];
 
