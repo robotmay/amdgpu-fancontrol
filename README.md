@@ -16,12 +16,10 @@ Yes.
 
 ## Installation
 
-Until I sort out something better:
+Until I sort out something better, under Ubuntu/Debian you will currently need a Rust setup, then clone the repo and run:
 
 ```
-cargo build --release
-cargo deb
-sudo dpkg -i target/debian/amdgpu-fancontrol_0.1.0_amd64.deb
+cargo deb --install
 sudo systemctl enable amdgpu-fancontrol.service
 ```
 
