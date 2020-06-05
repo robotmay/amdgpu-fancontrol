@@ -16,12 +16,25 @@ Yes.
 
 ## Installation
 
+For Ubuntu/Debian you can download a .deb binary from [the releases page](https://git.sr.ht/~robotmay/amdgpu-fancontrol/refs). Then install it with:
+
+```
+sudo dpkg -i amdgpu-fancontrol_0.1.1_amd64.deb
+sudo systemctl enable amdgpu-fancontrol.service
+```
+
+Now skip to the configuration section.
+
+## Building a .deb with Rust
+
 To build and install this under Ubuntu/Debian, you will first need [Rust](https://www.rust-lang.org) installed, then run:
 
 ```
 cargo deb --install
 sudo systemctl enable amdgpu-fancontrol.service
 ```
+
+## Configuration
 
 Configure your card if needed at: `/etc/amdgpu-fancontrol/config.toml`. You can find your cards (on Ubuntu/Debian, at least), at: `/sys/class/drm/`.
 In theory multiple cards are supported, but I don't own multiple cards, so _bon chance_.
