@@ -97,3 +97,7 @@ in your environment, and running `cargo test`, or by running the tests with:
 ```
 cargo test -- --test-threads=1
 ```
+
+## Contributing
+
+Patches or questions are welcome via the [mailing list](https://lists.sr.ht/~robotmay/amdgpu-fancontrol).
