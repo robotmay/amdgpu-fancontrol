@@ -1,6 +1,5 @@
 mod endpoint;
 
-use std::fs;
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -145,6 +144,7 @@ impl Drop for Card {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     fn setup() {
         fs::write(Path::new("test/card0/device/hwmon/hwmon0/temp1_input"), "35000")
