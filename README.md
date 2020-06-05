@@ -1,5 +1,7 @@
 # amdgpu-fancontrol
 
+[![builds.sr.ht status](https://builds.sr.ht/~robotmay/amdgpu-fancontrol.svg)](https://builds.sr.ht/~robotmay/amdgpu-fancontrol?)
+
 ## What is this?
 
 A fan controller daemon for Linux to control your AMD graphics cards, built in Rust.
