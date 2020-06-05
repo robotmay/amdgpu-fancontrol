@@ -100,4 +100,4 @@ cargo test -- --test-threads=1
 
 ## Contributing
 
-Patches or questions are welcome via the [mailing list](https://lists.sr.ht/~robotmay/amdgpu-fancontrol).
+Patches or questions are welcome via the [mailing list](https://lists.sr.ht/~robotmay/amdgpu-fancontrol). Please submit bugs or issues via [the issue tracker](https://todo.sr.ht/~robotmay/amdgpu-fancontrol).
