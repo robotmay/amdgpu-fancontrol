@@ -67,16 +67,23 @@ impl Card {
         recent_load.truncate(*fan_wind_down);
 
         let max_recent_temp = recent_temps.iter().max().unwrap();
+        let load_average = self.calculate_avg_load(&recent_load);
         let current_fan_speed = self.get_fan_speed();
         let new_fan_speed = self.calculate_new_fan_speed(&max_recent_temp);
 
-        println!("card={:?} current={} window={} fanspeed={} load={}", self.path, &temp, &max_recent_temp, &current_fan_speed, &gpu_load);
+        println!("card={:?} current={} window={} fanspeed={} load={} load_avg={}", self.path, &temp, &max_recent_temp, &current_fan_speed, &gpu_load, &load_average);
 
         if new_fan_speed != current_fan_speed {
             self.set_fan_speed(new_fan_speed)
         } else {
             Ok(())
         }
+    }
+
+    fn calculate_avg_load(&self, recent_load: &Vec<i32>) -> i32 {
+        let sum: i32 = recent_load.iter().sum();
+
+        sum as i32 / recent_load.len() as i32
     }
 
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
@@ -142,8 +149,6 @@ impl Card {
         let regex = Regex::new(r"GPU Load: (?P<load>\d+) %").unwrap();
         let debug_info = self.debug_endpoint().read();
         let caps = regex.captures(&debug_info).unwrap();
-
-        println!("{:?}", caps);
 
         caps["load"].parse().unwrap()
     }
