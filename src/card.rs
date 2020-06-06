@@ -72,7 +72,11 @@ impl Card {
 
         println!("card={:?} current={} window={} fanspeed={} load={}", self.path, &temp, &max_recent_temp, &current_fan_speed, &gpu_load);
 
-        self.set_fan_speed(new_fan_speed)
+        if new_fan_speed != current_fan_speed {
+            self.set_fan_speed(new_fan_speed)
+        } else {
+            Ok(())
+        }
     }
 
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
