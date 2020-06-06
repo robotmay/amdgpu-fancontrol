@@ -1,15 +1,15 @@
 mod card;
+mod config;
 
 use std::io;
 use std::fs;
-use std::path::Path;
 use std::thread;
 
 use clap::Clap;
-use serde::Deserialize;
 use toml;
 
 use card::Card;
+use config::Config;
 
 #[derive(Clap)]
 #[clap(version = "1.0", author = "Robert May <rob@afternoonrobot.co.uk>")]
@@ -18,23 +18,15 @@ struct Opts {
     config: String
 }
 
-#[derive(Deserialize, Debug)]
-struct Config {
-    cards: Vec<String>,
-    fan_wind_down: usize,
-    cards_path: String,
-    endpoint_path: String
-}
-
 fn main() {
     let opts = Opts::parse();
     let config = load_config(&opts).unwrap();
     let mut threads = vec![];
 
-    for card_name in config.cards {
-        let path = Path::new(&config.cards_path).join(&card_name);
+    for card_name in &config.cards {
+        let path = config.card_path(&card_name);
 
-        match Card::new(&path, &config.endpoint_path) {
+        match Card::new(&path, &config) {
             Some(card) => {
                 let fan_wind_down = usize::clone(&config.fan_wind_down);
 

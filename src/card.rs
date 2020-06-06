@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::thread;
 use std::time;
 
+use crate::config::Config;
 use endpoint::Endpoint;
 
 const REQUIRED_ENDPOINTS: [&str; 5] = [
@@ -22,8 +23,8 @@ pub struct Card {
 }
 
 impl Card {
-    pub fn new(path: &PathBuf, endpoint_path: &str) -> Option<Card> {
-        let full_endpoint_path = path.join(endpoint_path);
+    pub fn new(path: &PathBuf, config: &Config) -> Option<Card> {
+        let full_endpoint_path = path.join(&config.endpoint_path);
 
         let card = Card {
             path: path.to_path_buf(),
@@ -160,10 +161,21 @@ mod tests {
             .expect("Couldn't write to pwm1");
     }
 
+    fn config() -> Config {
+        Config {
+            cards_path: "test".to_string(),
+            cards: vec!["card0".to_string()],
+            endpoint_path: "device/hwmon/hwmon0".to_string(),
+            fan_wind_down: 30,
+            debug_endpoint_path: "".to_string()
+        }
+    }
+
     #[test]
     fn test_new() {
-        let path = Path::new("test/card0").to_path_buf();
-        let card = Card::new(&path, "device/hwmon/hwmon0").unwrap();
+        let config = config();
+        let path = config.card_path("card0");
+        let card = Card::new(&path, &config).unwrap();
 
         assert_eq!(card.path, Path::new("test/card0"));
         assert_eq!(card.endpoint_path, Path::new("test/card0/device/hwmon/hwmon0"));
@@ -173,8 +185,9 @@ mod tests {
     fn test_adjust_fan() {
         setup();
 
-        let path = Path::new("test/card0").to_path_buf();
-        let card = Card::new(&path, "device/hwmon/hwmon0").unwrap();
+        let config = config();
+        let path = config.card_path("card0");
+        let card = Card::new(&path, &config).unwrap();
         let fan_wind_down: usize = 30;
         let mut recent_temps: Vec<i32> = vec![];
 

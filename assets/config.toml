@@ -2,3 +2,4 @@ cards = ["card0"]
 fan_wind_down = 30
 cards_path = "/sys/class/drm"
 endpoint_path = "device/hwmon/hwmon0"
+debug_endpoint_path = "/sys/kernel/debug/dri/0/amdgpu_pm_info"
