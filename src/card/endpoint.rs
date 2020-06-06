@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let path = Path::new("test/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
+        let path = Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
         let endpoint = Endpoint::new(path.clone());
 
         assert_eq!(endpoint.path, path);
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_exists() {
-        let path = Path::new("test/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
+        let path = Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
         let endpoint = Endpoint::new(path.clone());
 
         assert_eq!(endpoint.exists(), true);
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_read_write() {
-        let path = Path::new("test/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
+        let path = Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").to_path_buf();
         let endpoint = Endpoint::new(path.clone());
 
         let first_write = endpoint.write("30").unwrap();

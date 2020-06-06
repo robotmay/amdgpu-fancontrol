@@ -148,22 +148,22 @@ mod tests {
     use std::path::Path;
 
     fn setup() {
-        fs::write(Path::new("test/card0/device/hwmon/hwmon0/temp1_input"), "35000")
+        fs::write(Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/temp1_input"), "35000")
             .expect("Couldn't write to temp1_input");
 
-        fs::write(Path::new("test/card0/device/hwmon/hwmon0/pwm1_min"), "0")
+        fs::write(Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1_min"), "0")
             .expect("Couldn't write to pwm1_min");
 
-        fs::write(Path::new("test/card0/device/hwmon/hwmon0/pwm1_max"), "255")
+        fs::write(Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1_max"), "255")
             .expect("Couldn't write to pwm1_max");
 
-        fs::write(Path::new("test/card0/device/hwmon/hwmon0/pwm1"), "30")
+        fs::write(Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1"), "30")
             .expect("Couldn't write to pwm1");
     }
 
     fn config() -> Config {
         Config {
-            cards_path: "test".to_string(),
+            cards_path: "test/sys/class/drm".to_string(),
             cards: vec!["card0".to_string()],
             endpoint_path: "device/hwmon/hwmon0".to_string(),
             fan_wind_down: 30,
@@ -177,8 +177,8 @@ mod tests {
         let path = config.card_path("card0");
         let card = Card::new(&path, &config).unwrap();
 
-        assert_eq!(card.path, Path::new("test/card0"));
-        assert_eq!(card.endpoint_path, Path::new("test/card0/device/hwmon/hwmon0"));
+        assert_eq!(card.path, Path::new("test/sys/class/drm/card0"));
+        assert_eq!(card.endpoint_path, Path::new("test/sys/class/drm/card0/device/hwmon/hwmon0"));
     }
 
     #[test]
@@ -192,13 +192,13 @@ mod tests {
         let mut recent_temps: Vec<i32> = vec![];
 
         // Check temperature from setup
-        assert_eq!(fs::read_to_string("test/card0/device/hwmon/hwmon0/pwm1").unwrap(), "30");
+        assert_eq!(fs::read_to_string("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").unwrap(), "30");
 
         // Run the fan adjustment based on the setup temperature
         let adjust = card.adjust_fan(&fan_wind_down, &mut recent_temps).unwrap();
         assert_eq!(adjust, ());
 
         // Ensure the fan was correctly updated
-        assert_eq!(fs::read_to_string("test/card0/device/hwmon/hwmon0/pwm1").unwrap(), "0");
+        assert_eq!(fs::read_to_string("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").unwrap(), "0");
     }
 }
