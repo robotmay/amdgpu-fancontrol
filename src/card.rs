@@ -22,7 +22,7 @@ pub struct Card {
     config: Config,
     path: PathBuf,
     endpoint_path: PathBuf,
-    debug_endpoint_path: PathBuf,
+    monitoring_path: PathBuf,
     temp_window: Vec<i32>,
     load_window: Vec<i32>,
     current_fan_speed: i32
@@ -31,13 +31,13 @@ pub struct Card {
 impl Card {
     pub fn new(path: &PathBuf, config: Config) -> Option<Card> {
         let full_endpoint_path = path.join(&config.endpoint_path);
-        let debug_endpoint_path = Path::new(&config.debug_endpoint_path);
+        let monitoring_path = Path::new(&config.monitoring_path);
 
         let card = Card {
             config: config.clone(),
             path: path.to_path_buf(),
             endpoint_path: full_endpoint_path,
-            debug_endpoint_path: debug_endpoint_path.to_path_buf(),
+            monitoring_path: monitoring_path.to_path_buf(),
             temp_window: vec![],
             load_window: vec![],
             current_fan_speed: 0
@@ -56,6 +56,7 @@ impl Card {
         loop {
             self.adjust_fan()
                 .expect("Failed to adjust the fan");
+
             thread::sleep(time::Duration::from_millis(1000));
         }
     }
@@ -77,7 +78,15 @@ impl Card {
         let current_fan_speed = self.get_fan_speed();
         let new_fan_speed = self.calculate_new_fan_speed(&max_recent_temp);
 
-        println!("card={:?} current={} window={} fanspeed={} load={} load_avg={}", self.path, &temp, &max_recent_temp, &current_fan_speed, &gpu_load, &load_average);
+        println!(
+            "card={:?} current={} window={} fanspeed={} load={} load_avg={}",
+            self.path,
+            &temp,
+            &max_recent_temp,
+            &current_fan_speed,
+            &gpu_load,
+            &load_average
+        );
 
         if new_fan_speed != current_fan_speed {
             self.set_fan_speed(new_fan_speed)
@@ -153,8 +162,8 @@ impl Card {
 
     fn gpu_usage_percentage(&self) -> i32 {
         let regex = Regex::new(r"GPU Load: (?P<load>\d+) %").unwrap();
-        let debug_info = self.debug_endpoint().read();
-        let caps = regex.captures(&debug_info).unwrap();
+        let monitoring_info = self.monitoring_endpoint().read();
+        let caps = regex.captures(&monitoring_info).unwrap();
 
         caps["load"].parse().unwrap()
     }
@@ -174,8 +183,8 @@ impl Card {
         Endpoint::new(self.endpoint_path.join(name))
     }
 
-    fn debug_endpoint(&self) -> Endpoint {
-        Endpoint::new(self.debug_endpoint_path.to_path_buf())
+    fn monitoring_endpoint(&self) -> Endpoint {
+        Endpoint::new(self.monitoring_path.to_path_buf())
     }
 }
 
@@ -211,7 +220,7 @@ mod tests {
             cards: vec!["card0".to_string()],
             endpoint_path: "device/hwmon/hwmon0".to_string(),
             fan_wind_down: 30,
-            debug_endpoint_path: "test/sys/kernel/debug/dri/0/amdgpu_pm_info".to_string()
+            monitoring_path: "test/sys/kernel/debug/dri/0/amdgpu_pm_info".to_string()
         }
     }
 

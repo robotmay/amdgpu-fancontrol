@@ -7,7 +7,7 @@ pub struct Config {
     pub fan_wind_down: usize,
     pub cards_path: String,
     pub endpoint_path: String,
-    pub debug_endpoint_path: String
+    pub monitoring_path: String
 }
 
 impl Config {
