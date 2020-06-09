@@ -60,6 +60,6 @@ mod tests {
         let config = load_config(&opts).unwrap();
 
         assert_eq!(config.cards, ["card0"]);
-        assert_eq!(config.fan_wind_down, 30);
+        assert_eq!(config.measurement_window, 30);
     }
 }

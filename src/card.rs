@@ -67,11 +67,11 @@ impl Card {
 
         // Keep the last <fan_wind_down> seconds of readings
         self.temp_window.insert(0, temp);
-        self.temp_window.truncate(self.config.fan_wind_down);
+        self.temp_window.truncate(self.config.measurement_window);
 
         // Keep a window of GPU load percentages
         self.load_window.insert(0, gpu_load);
-        self.load_window.truncate(self.config.fan_wind_down);
+        self.load_window.truncate(self.config.measurement_window);
 
         let max_recent_temp = self.temp_window.iter().max().unwrap();
         let load_average = self.calculate_avg_load(&self.load_window);
@@ -218,8 +218,8 @@ mod tests {
         Config {
             cards_path: "test/sys/class/drm".to_string(),
             cards: vec!["card0".to_string()],
+            measurement_window: 30,
             endpoint_path: "device/hwmon/hwmon0".to_string(),
-            fan_wind_down: 30,
             monitoring_path: "test/sys/kernel/debug/dri/0/amdgpu_pm_info".to_string()
         }
     }

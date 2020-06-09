@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[derive(Clone, Deserialize, Debug)]
 pub struct Config {
     pub cards: Vec<String>,
-    pub fan_wind_down: usize,
+    pub measurement_window: usize,
     pub cards_path: String,
     pub endpoint_path: String,
     pub monitoring_path: String
