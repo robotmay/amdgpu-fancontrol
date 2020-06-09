@@ -26,13 +26,11 @@ fn main() {
     for card_name in &config.cards {
         let path = config.card_path(&card_name);
 
-        match Card::new(&path, &config) {
-            Some(card) => {
-                let fan_wind_down = usize::clone(&config.fan_wind_down);
-
+        match Card::new(&path, config.clone()) {
+            Some(mut card) => {
                 threads.push(
                     thread::spawn(move || {
-                        card.control(fan_wind_down)
+                        card.control()
                     })
                 )
             },

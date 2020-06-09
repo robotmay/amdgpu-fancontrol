@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Config {
     pub cards: Vec<String>,
     pub fan_wind_down: usize,

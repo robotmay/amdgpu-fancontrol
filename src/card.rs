@@ -19,20 +19,28 @@ const REQUIRED_ENDPOINTS: [&str; 5] = [
 
 #[derive(Debug)]
 pub struct Card {
+    config: Config,
     path: PathBuf,
     endpoint_path: PathBuf,
-    debug_endpoint_path: PathBuf
+    debug_endpoint_path: PathBuf,
+    temp_window: Vec<i32>,
+    load_window: Vec<i32>,
+    current_fan_speed: i32
 }
 
 impl Card {
-    pub fn new(path: &PathBuf, config: &Config) -> Option<Card> {
+    pub fn new(path: &PathBuf, config: Config) -> Option<Card> {
         let full_endpoint_path = path.join(&config.endpoint_path);
         let debug_endpoint_path = Path::new(&config.debug_endpoint_path);
 
         let card = Card {
+            config: config.clone(),
             path: path.to_path_buf(),
             endpoint_path: full_endpoint_path,
-            debug_endpoint_path: debug_endpoint_path.to_path_buf()
+            debug_endpoint_path: debug_endpoint_path.to_path_buf(),
+            temp_window: vec![],
+            load_window: vec![],
+            current_fan_speed: 0
         };
 
         if card.exists() && card.verify() {
@@ -42,32 +50,30 @@ impl Card {
         }
     }
 
-    pub fn control(&self, fan_wind_down: usize) -> std::thread::JoinHandle<()> {
+    pub fn control(&mut self) -> std::thread::JoinHandle<()> {
         self.assume_software_control();
-        let mut recent_temps: Vec<i32> = vec![];
-        let mut recent_load: Vec<i32> = vec![];
 
         loop {
-            self.adjust_fan(&fan_wind_down, &mut recent_temps, &mut recent_load)
+            self.adjust_fan()
                 .expect("Failed to adjust the fan");
             thread::sleep(time::Duration::from_millis(1000));
         }
     }
 
-    pub fn adjust_fan(&self, fan_wind_down: &usize, recent_temps: &mut Vec<i32>, recent_load: &mut Vec<i32>) -> std::io::Result<()> {
+    pub fn adjust_fan(&mut self) -> std::io::Result<()> {
         let temp = self.current_temperature();
         let gpu_load = self.gpu_usage_percentage();
 
         // Keep the last <fan_wind_down> seconds of readings
-        recent_temps.insert(0, temp);
-        recent_temps.truncate(*fan_wind_down);
+        self.temp_window.insert(0, temp);
+        self.temp_window.truncate(self.config.fan_wind_down);
 
         // Keep a window of GPU load percentages
-        recent_load.insert(0, gpu_load);
-        recent_load.truncate(*fan_wind_down);
+        self.load_window.insert(0, gpu_load);
+        self.load_window.truncate(self.config.fan_wind_down);
 
-        let max_recent_temp = recent_temps.iter().max().unwrap();
-        let load_average = self.calculate_avg_load(&recent_load);
+        let max_recent_temp = self.temp_window.iter().max().unwrap();
+        let load_average = self.calculate_avg_load(&self.load_window);
         let current_fan_speed = self.get_fan_speed();
         let new_fan_speed = self.calculate_new_fan_speed(&max_recent_temp);
 
@@ -213,7 +219,7 @@ mod tests {
         let config = config();
         let path = config.card_path("card0");
 
-        Card::new(&path, &config).unwrap()
+        Card::new(&path, config.clone()).unwrap()
     }
 
     #[test]
@@ -228,17 +234,13 @@ mod tests {
     fn test_adjust_fan() {
         setup();
 
-        let card = card();
-
-        let fan_wind_down: usize = 30;
-        let mut recent_temps: Vec<i32> = vec![];
-        let mut recent_load: Vec<i32> = vec![];
+        let mut card = card();
 
         // Check temperature from setup
         assert_eq!(fs::read_to_string("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").unwrap(), "30");
 
         // Run the fan adjustment based on the setup temperature
-        let adjust = card.adjust_fan(&fan_wind_down, &mut recent_temps, &mut recent_load).unwrap();
+        let adjust = card.adjust_fan().unwrap();
         assert_eq!(adjust, ());
 
         // Ensure the fan was correctly updated
