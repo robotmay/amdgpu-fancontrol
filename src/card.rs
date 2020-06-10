@@ -123,9 +123,9 @@ impl Card {
 
     fn speed_step(&self, step: i32) -> i32 {
         let step = step as f32;
-        let base = (self.max_fan_speed() / 7) as f32;
+        let base = (self.max_fan_speed() / 12) as f32;
         let multiplier = match self.under_load() {
-            true => 1.2,
+            true => 1.1,
             false => 1.0,
         };
 
@@ -179,11 +179,15 @@ impl Card {
     }
 
     fn gpu_usage_percentage(&self) -> i32 {
-        let regex = Regex::new(r"GPU Load: (?P<load>\d+) %").unwrap();
-        let monitoring_info = self.monitoring_endpoint().read();
-        let caps = regex.captures(&monitoring_info).unwrap();
+        if self.monitoring_endpoint().exists() {
+            let regex = Regex::new(r"GPU Load: (?P<load>\d+) %").unwrap();
+            let monitoring_info = self.monitoring_endpoint().read();
+            let caps = regex.captures(&monitoring_info).unwrap();
 
-        caps["load"].parse().unwrap()
+            caps["load"].parse().unwrap()
+        } else {
+            0
+        }
     }
 
     fn exists(&self) -> bool {
