@@ -1,6 +1,6 @@
 [package]
 name = "amdgpu-fancontrol"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Robert May <rob@afternoonrobot.co.uk>"]
 edition = "2018"
 license = "MIT"
