@@ -101,17 +101,35 @@ impl Card {
         sum as i32 / recent_load.len() as i32
     }
 
+    fn under_load(&self) -> bool {
+        let load_average = self.calculate_avg_load(&self.load_window);
+
+        load_average > 20
+    }
+
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
         // Change fan speed with <fan_wind_down> seconds of wind-down delay
         match max_recent_temp {
             0..=40 => self.min_fan_speed(),
-            41..=45 => self.max_fan_speed() / 5,
-            46..=50 => self.max_fan_speed() / 4,
-            51..=60 => self.max_fan_speed() / 3,
-            61..=65 => self.max_fan_speed() / 2,
-            66..=70 => (self.max_fan_speed() / 2) + (self.max_fan_speed() / 4),
+            41..=45 => self.speed_step(1),
+            46..=50 => self.speed_step(2),
+            51..=55 => self.speed_step(3),
+            56..=60 => self.speed_step(4),
+            61..=65 => self.speed_step(5),
+            66..=70 => self.speed_step(6),
             _ => self.max_fan_speed(),
         }
+    }
+
+    fn speed_step(&self, step: i32) -> i32 {
+        let step = step as f32;
+        let base = (self.max_fan_speed() / 7) as f32;
+        let multiplier = match self.under_load() {
+            true => 1.2,
+            false => 1.0,
+        };
+
+        (base * step * multiplier) as i32
     }
 
     fn assume_software_control(&self) {
