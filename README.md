@@ -48,9 +48,10 @@ If you want to adjust the window used to decide whether the fan can adjust downw
 
 ```toml
 cards = ["card0"]
-fan_wind_down = 30
+measurement_window = 30
 cards_path = "/sys/class/drm"
 endpoint_path = "device/hwmon/hwmon0"
+monitoring_path = "/sys/kernel/debug/dri/0/amdgpu_pm_info"
 ```
 
 The two paths get joined together with the card names, for example: `/sys/class/drm/card0/device/hwmon/hwmon0`.
