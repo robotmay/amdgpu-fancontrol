@@ -65,7 +65,7 @@ impl Card {
         let temp = self.current_temperature();
         let gpu_load = self.gpu_usage_percentage();
 
-        // Keep the last <fan_wind_down> seconds of readings
+        // Keep a window of temperature readings
         self.temp_window.insert(0, temp);
         self.temp_window.truncate(self.config.measurement_window);
 
@@ -101,22 +101,16 @@ impl Card {
         sum as i32 / recent_load.len() as i32
     }
 
-    fn under_load(&self) -> bool {
-        let load_average = self.calculate_avg_load(&self.load_window);
-
-        load_average > 20
-    }
-
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
-        // Change fan speed with <fan_wind_down> seconds of wind-down delay
         match max_recent_temp {
             0..=40 => self.min_fan_speed(),
             41..=45 => self.speed_step(1),
             46..=50 => self.speed_step(2),
             51..=55 => self.speed_step(3),
-            56..=60 => self.speed_step(4),
-            61..=65 => self.speed_step(5),
-            66..=70 => self.speed_step(6),
+            56..=60 => self.speed_step(5),
+            61..=65 => self.speed_step(7),
+            66..=70 => self.speed_step(8),
+            71..=75 => self.speed_step(10),
             _ => self.max_fan_speed(),
         }
     }
@@ -124,12 +118,21 @@ impl Card {
     fn speed_step(&self, step: i32) -> i32 {
         let step = step as f32;
         let base = (self.max_fan_speed() / 12) as f32;
-        let multiplier = match self.under_load() {
-            true => 1.1,
-            false => 1.0,
+        let load_average = self.calculate_avg_load(&self.load_window);
+
+        let multiplier = match load_average {
+            51..=75 => 1.1,
+            76..=100 => 1.2,
+            _ => 1.0,
         };
 
-        (base * step * multiplier) as i32
+        let speed = (base * step * multiplier) as i32;
+
+        if speed < self.max_fan_speed() {
+            speed
+        } else {
+            self.max_fan_speed()
+        }
     }
 
     fn assume_software_control(&self) {
