@@ -25,6 +25,7 @@ pub struct Card {
     monitoring_path: PathBuf,
     temp_window: Vec<i32>,
     load_window: Vec<i32>,
+    fan_window: Vec<i32>,
     current_fan_speed: i32
 }
 
@@ -40,6 +41,7 @@ impl Card {
             monitoring_path: monitoring_path.to_path_buf(),
             temp_window: vec![],
             load_window: vec![],
+            fan_window: vec![],
             current_fan_speed: 0
         };
 
@@ -74,25 +76,37 @@ impl Card {
         self.load_window.truncate(self.config.measurement_window);
 
         let max_recent_temp = self.temp_window.iter().max().unwrap();
+        let min_recent_temp = self.temp_window.iter().min().unwrap();
         let load_average = self.calculate_avg_load(&self.load_window);
         let current_fan_speed = self.get_fan_speed();
         let new_fan_speed = self.calculate_new_fan_speed(&max_recent_temp);
+        let bouncing = self.bouncing();
 
         println!(
-            "card={:?} current={} window={} fanspeed={} load={} load_avg={}",
+            "card={:?} current_temp={} max_temp={} min_temp={} fanspeed={} load={} load_avg={} bouncing={}",
             self.path,
             &temp,
             &max_recent_temp,
+            &min_recent_temp,
             &current_fan_speed,
             &gpu_load,
-            &load_average
+            &load_average,
+            &bouncing
         );
 
-        if new_fan_speed != current_fan_speed {
+        if (new_fan_speed != current_fan_speed) && !bouncing {
             self.set_fan_speed(new_fan_speed)
         } else {
             Ok(())
         }
+    }
+
+    fn bouncing(&self) -> bool {
+        let max_recent_temp: i32 = *self.temp_window.iter().max().unwrap();
+        let min_recent_temp: i32 = *self.temp_window.iter().min().unwrap();
+        let difference: i32 = max_recent_temp - min_recent_temp;
+
+        difference < 5
     }
 
     fn calculate_avg_load(&self, recent_load: &Vec<i32>) -> i32 {
