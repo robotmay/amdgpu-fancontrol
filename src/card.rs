@@ -78,8 +78,8 @@ impl Card {
         let max_recent_temp = self.temp_window.iter().max().unwrap();
         let min_recent_temp = self.temp_window.iter().min().unwrap();
         let load_average = self.calculate_avg_load(&self.load_window);
-        let current_fan_speed = self.get_fan_speed();
-        let new_fan_speed = self.calculate_new_fan_speed(&max_recent_temp);
+        let current_fan_speed: i32 = self.get_fan_speed();
+        let new_fan_speed: i32 = self.calculate_new_fan_speed(&max_recent_temp);
         let bouncing = self.bouncing();
 
         println!(
@@ -94,10 +94,12 @@ impl Card {
             &bouncing
         );
 
-        if (new_fan_speed != current_fan_speed) && !bouncing {
-            self.set_fan_speed(new_fan_speed)
-        } else {
+        if (new_fan_speed < current_fan_speed) && bouncing {
             Ok(())
+        } else if new_fan_speed == current_fan_speed {
+            Ok(())
+        } else {
+            self.set_fan_speed(new_fan_speed)
         }
     }
 
@@ -106,7 +108,7 @@ impl Card {
         let min_recent_temp: i32 = *self.temp_window.iter().min().unwrap();
         let difference: i32 = max_recent_temp - min_recent_temp;
 
-        difference < 5
+        min_recent_temp < max_recent_temp && difference < 5
     }
 
     fn calculate_avg_load(&self, recent_load: &Vec<i32>) -> i32 {
@@ -117,8 +119,7 @@ impl Card {
 
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
         match max_recent_temp {
-            0..=40 => self.min_fan_speed(),
-            41..=45 => self.speed_step(1),
+            0..=45 => self.min_fan_speed(),
             46..=50 => self.speed_step(2),
             51..=55 => self.speed_step(3),
             56..=60 => self.speed_step(4),
