@@ -107,10 +107,10 @@ impl Card {
             41..=45 => self.speed_step(1),
             46..=50 => self.speed_step(2),
             51..=55 => self.speed_step(3),
-            56..=60 => self.speed_step(5),
-            61..=65 => self.speed_step(7),
-            66..=70 => self.speed_step(8),
-            71..=75 => self.speed_step(10),
+            56..=60 => self.speed_step(4),
+            61..=65 => self.speed_step(5),
+            66..=70 => self.speed_step(6),
+            71..=75 => self.speed_step(7),
             _ => self.max_fan_speed(),
         }
     }
