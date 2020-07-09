@@ -120,19 +120,19 @@ impl Card {
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
         match max_recent_temp {
             0..=45 => self.min_fan_speed(),
-            46..=50 => self.speed_step(2),
-            51..=55 => self.speed_step(3),
-            56..=60 => self.speed_step(4),
-            61..=65 => self.speed_step(5),
-            66..=70 => self.speed_step(6),
-            71..=75 => self.speed_step(7),
+            46..=50 => self.speed_step(1),
+            51..=55 => self.speed_step(2),
+            56..=60 => self.speed_step(3),
+            61..=65 => self.speed_step(4),
+            66..=70 => self.speed_step(5),
+            71..=75 => self.speed_step(6),
             _ => self.max_fan_speed(),
         }
     }
 
     fn speed_step(&self, step: i32) -> i32 {
         let step = step as f32;
-        let base = (self.max_fan_speed() / 12) as f32;
+        let base = (self.max_fan_speed() / 10) as f32;
         let load_average = self.calculate_avg_load(&self.load_window);
 
         let multiplier = match load_average {
