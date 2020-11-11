@@ -1,0 +1,38 @@
+image: "rust:latest"
+
+variables:
+  RUST_TEST_THREADS: 1
+
+stages:
+  - test
+  - build
+
+before_script:
+  - cargo install toml-cli cargo-deb
+  - VERSION=$(toml get Cargo.toml package.version | tr -d '"')
+
+test:
+  stage: test
+  script:
+    - rustc --version && cargo --version
+    - cargo test --workspace --verbose
+
+build:binary:
+  stage: build
+  only:
+    - tags
+  script:
+    - rustc --version && cargo --version
+    - echo "Building package version ${VERSION}"
+    - cargo build --release --workspace --verbose
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file target/release/amdgpu-fancontrol ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/amdgpu-fancontrol/${VERSION}/amdgpu-fancontrol'
+
+build:deb:
+  stage: build
+  only:
+    - tags
+  script:
+    - rustc --version && cargo --version
+    - echo "Building debian package version ${VERSION}"
+    - cargo deb --verbose
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file target/debian/amdgpu-fancontrol_${VERSION}_amd64.deb ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/amdgpu-fancontrol/${VERSION}/amdgpu-fancontrol.deb'
