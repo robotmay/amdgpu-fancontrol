@@ -1,7 +1,5 @@
 # amdgpu-fancontrol
 
-[![builds.sr.ht status](https://builds.sr.ht/~robotmay/amdgpu-fancontrol.svg)](https://builds.sr.ht/~robotmay/amdgpu-fancontrol?)
-
 ## What is this?
 
 A fan controller daemon for Linux to control your AMD graphics cards, built in Rust.
@@ -17,7 +15,7 @@ Yes.
 ## Installation
 
 ### Ubuntu/Debian
-For Ubuntu/Debian you can download a .deb binary from [the releases page](https://git.sr.ht/~robotmay/amdgpu-fancontrol/refs). Then install it with:
+For Ubuntu/Debian you can download a .deb binary from [the releases page](https://gitlab.com/robotmay/amdgpu-fancontrol/-/packages). Then install it with:
 
 ```
 sudo dpkg -i amdgpu-fancontrol_0.1.2_amd64.deb
@@ -28,7 +26,7 @@ Now skip to the configuration section.
 
 ## Pre-built binary
 
-On [each release](https://git.sr.ht/~robotmay/amdgpu-fancontrol/refs) there is also a pre-built binary attached, which can be used, in theory, on other
+On [each release](https://gitlab.com/robotmay/amdgpu-fancontrol/-/packages) there is also a pre-built binary attached, which can be used, in theory, on other
 distributions. You will need to add your own systemd service or equivalent, and point it to a valid config file.
 
 ## Building a .deb with Rust
@@ -101,4 +99,4 @@ cargo test -- --test-threads=1
 
 ## Contributing
 
-Patches or questions are welcome via the [mailing list](https://lists.sr.ht/~robotmay/amdgpu-fancontrol). Please submit bugs or issues via [the issue tracker](https://todo.sr.ht/~robotmay/amdgpu-fancontrol).
+Patches or questions are welcome. Please submit bugs or issues via [the issue tracker](https://gitlab.com/robotmay/amdgpu-fancontrol/-/issues).
