@@ -5,6 +5,7 @@ use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time;
+use splines::{Interpolation, Key, Spline};
 
 use crate::config::Config;
 use endpoint::Endpoint;
@@ -52,6 +53,14 @@ impl Card {
         }
     }
 
+    pub fn spline(&self) -> Spline<f32, f32> {
+        // Fan speeds are set as percentages
+        let start = Key::new(30., 0., Interpolation::Bezier(1.0));
+        let end = Key::new(self.critical_temperature() as f32, 100., Interpolation::default());
+
+        Spline::from_vec(vec![start, end])
+    }
+
     pub fn control(&mut self) -> std::thread::JoinHandle<()> {
         self.assume_software_control();
 
@@ -80,35 +89,26 @@ impl Card {
         let load_average = self.calculate_avg_load(&self.load_window);
         let current_fan_speed: i32 = self.get_fan_speed();
         let new_fan_speed: i32 = self.calculate_new_fan_speed(&max_recent_temp);
-        let bouncing = self.bouncing();
 
         println!(
-            "card={:?} current_temp={} max_temp={} min_temp={} fanspeed={} load={} load_avg={} bouncing={}",
+            "card={:?} current_temp={} max_temp={} min_temp={} fanspeed={} load={} load_avg={}",
             self.path,
             &temp,
             &max_recent_temp,
             &min_recent_temp,
             &current_fan_speed,
             &gpu_load,
-            &load_average,
-            &bouncing
+            &load_average
         );
 
-        if (new_fan_speed < current_fan_speed) && bouncing {
+        if new_fan_speed == current_fan_speed {
             Ok(())
-        } else if new_fan_speed == current_fan_speed {
+        } else if (gpu_load > 50) && (new_fan_speed < current_fan_speed) {
+            // We probably don't want to lower the fan whilst still under load
             Ok(())
         } else {
             self.set_fan_speed(new_fan_speed)
         }
-    }
-
-    fn bouncing(&self) -> bool {
-        let max_recent_temp: i32 = *self.temp_window.iter().max().unwrap();
-        let min_recent_temp: i32 = *self.temp_window.iter().min().unwrap();
-        let difference: i32 = max_recent_temp - min_recent_temp;
-
-        min_recent_temp < max_recent_temp && difference < 5
     }
 
     fn calculate_avg_load(&self, recent_load: &Vec<i32>) -> i32 {
@@ -118,36 +118,13 @@ impl Card {
     }
 
     fn calculate_new_fan_speed(&self, max_recent_temp: &i32) -> i32 {
-        match max_recent_temp {
-            0..=45 => self.min_fan_speed(),
-            46..=50 => self.speed_step(1),
-            51..=55 => self.speed_step(2),
-            56..=60 => self.speed_step(3),
-            61..=65 => self.speed_step(4),
-            66..=70 => self.speed_step(5),
-            71..=75 => self.speed_step(6),
-            _ => self.max_fan_speed(),
-        }
-    }
+        let spline = self.spline();
+        let interpolator = *max_recent_temp as f32;
 
-    fn speed_step(&self, step: i32) -> i32 {
-        let step = step as f32;
-        let base = (self.max_fan_speed() / 10) as f32;
-        let load_average = self.calculate_avg_load(&self.load_window);
+        let percentage: f32 = spline.clamped_sample(interpolator).unwrap();
 
-        let multiplier = match load_average {
-            51..=75 => 1.1,
-            76..=100 => 1.2,
-            _ => 1.0,
-        };
-
-        let speed = (base * step * multiplier) as i32;
-
-        if speed < self.max_fan_speed() {
-            speed
-        } else {
-            self.max_fan_speed()
-        }
+        // Calculates a percentage speed, then converts that using the max PWM cycle number
+        (percentage * (self.max_fan_speed() as f32 / 100.0)) as i32
     }
 
     fn assume_software_control(&self) {
@@ -171,11 +148,11 @@ impl Card {
             .unwrap() / 1000
     }
 
-    fn min_fan_speed(&self) -> i32 {
-        self.endpoint("pwm1_min")
+    fn critical_temperature(&self) -> i32 {
+        self.endpoint("temp1_crit")
             .read()
-            .parse()
-            .unwrap()
+            .parse::<i32>()
+            .unwrap() / 1000
     }
 
     fn max_fan_speed(&self) -> i32 {
@@ -286,7 +263,7 @@ mod tests {
         let mut card = card();
 
         // Check temperature from setup
-        assert_eq!(fs::read_to_string("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").unwrap(), "30");
+        assert_eq!(fs::read_to_string("test/sys/class/drm/card0/device/hwmon/hwmon0/pwm1").unwrap(), "11");
 
         // Run the fan adjustment based on the setup temperature
         let adjust = card.adjust_fan().unwrap();
